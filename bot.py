@@ -9,8 +9,18 @@ import re
 import os
 import json
 import logging
+from datetime import datetime
 from telegram import Update, ReactionTypeEmoji
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
+
+# PDF generation
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -261,6 +271,136 @@ async def total_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         logger.error(f"Error: {e}")
 
 
+def create_certificate(name: str, urls_count: int) -> str:
+    """Create a professional certificate PDF."""
+    filename = f"certificate_{name}.pdf"
+    
+    # Create landscape A4 PDF
+    c = canvas.Canvas(filename, pagesize=landscape(A4))
+    width, height = landscape(A4)
+    
+    # Background color - light cream
+    c.setFillColor(colors.Color(0.98, 0.96, 0.90))
+    c.rect(0, 0, width, height, fill=True, stroke=False)
+    
+    # Border - gold color
+    c.setStrokeColor(colors.Color(0.85, 0.65, 0.13))
+    c.setLineWidth(8)
+    c.rect(30, 30, width - 60, height - 60, fill=False, stroke=True)
+    
+    # Inner border
+    c.setLineWidth(2)
+    c.rect(45, 45, width - 90, height - 90, fill=False, stroke=True)
+    
+    # Title
+    c.setFillColor(colors.Color(0.2, 0.2, 0.4))
+    c.setFont("Helvetica-Bold", 48)
+    c.drawCentredString(width / 2, height - 120, "CERTIFICATE")
+    
+    c.setFont("Helvetica", 24)
+    c.drawCentredString(width / 2, height - 160, "OF ACHIEVEMENT")
+    
+    # Decorative line
+    c.setStrokeColor(colors.Color(0.85, 0.65, 0.13))
+    c.setLineWidth(2)
+    c.line(width / 2 - 150, height - 180, width / 2 + 150, height - 180)
+    
+    # "This is to certify that"
+    c.setFillColor(colors.Color(0.3, 0.3, 0.3))
+    c.setFont("Helvetica", 18)
+    c.drawCentredString(width / 2, height - 230, "This is to certify that")
+    
+    # Name
+    c.setFillColor(colors.Color(0.1, 0.1, 0.3))
+    c.setFont("Helvetica-Bold", 36)
+    c.drawCentredString(width / 2, height - 280, name)
+    
+    # Underline for name
+    name_width = c.stringWidth(name, "Helvetica-Bold", 36)
+    c.setStrokeColor(colors.Color(0.85, 0.65, 0.13))
+    c.line(width / 2 - name_width / 2 - 20, height - 290, 
+           width / 2 + name_width / 2 + 20, height - 290)
+    
+    # Achievement text
+    c.setFillColor(colors.Color(0.3, 0.3, 0.3))
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(width / 2, height - 340, 
+                        "has demonstrated exceptional dedication and hard work")
+    c.drawCentredString(width / 2, height - 365, 
+                        "in contributing to our community by sharing valuable content.")
+    
+    # Stats
+    c.setFont("Helvetica-Bold", 20)
+    c.setFillColor(colors.Color(0.2, 0.4, 0.2))
+    c.drawCentredString(width / 2, height - 420, 
+                        f"Total Contributions: {urls_count} URLs")
+    
+    # Date
+    today = datetime.now().strftime("%B %d, %Y")
+    c.setFillColor(colors.Color(0.3, 0.3, 0.3))
+    c.setFont("Helvetica", 14)
+    c.drawCentredString(width / 2, height - 480, f"Awarded on {today}")
+    
+    # Signature line
+    c.setStrokeColor(colors.Color(0.3, 0.3, 0.3))
+    c.setLineWidth(1)
+    c.line(width / 2 - 100, 100, width / 2 + 100, 100)
+    c.setFont("Helvetica", 12)
+    c.drawCentredString(width / 2, 80, "Authorized Signature")
+    
+    # Star decorations
+    c.setFillColor(colors.Color(0.85, 0.65, 0.13))
+    c.setFont("Helvetica", 24)
+    c.drawCentredString(100, height - 120, "★")
+    c.drawCentredString(width - 100, height - 120, "★")
+    c.drawCentredString(100, 100, "★")
+    c.drawCentredString(width - 100, 100, "★")
+    
+    c.save()
+    return filename
+
+
+async def cer_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Generate certificate for a user - reply to their message with /cer."""
+    try:
+        # Must be a reply to someone's message
+        if not update.message.reply_to_message:
+            await update.message.reply_text("Reply to a user's message with /cer to give them a certificate!")
+            return
+        
+        # Get the user being awarded
+        target_user = update.message.reply_to_message.from_user
+        target_name = target_user.first_name
+        if target_user.last_name:
+            target_name += f" {target_user.last_name}"
+        target_username = target_user.username or target_name
+        
+        # Get their URL count
+        counts = load_counts()
+        url_count = counts.get(target_username, 0)
+        if url_count == 0:
+            url_count = counts.get(target_name, 0)
+        
+        # Create certificate
+        filename = create_certificate(target_name, url_count)
+        
+        # Send certificate
+        with open(filename, 'rb') as f:
+            await update.message.reply_document(
+                document=f,
+                filename=f"Certificate_{target_name}.pdf",
+                caption=f"🏆 Certificate of Achievement for {target_name}!\n\nCongratulations on your hard work! 🎉"
+            )
+        
+        # Clean up
+        os.remove(filename)
+        logger.info(f"Certificate generated for {target_name}")
+        
+    except Exception as e:
+        logger.error(f"Error generating certificate: {e}")
+        await update.message.reply_text("Error generating certificate. Please try again.")
+
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     pending = load_pending_urls()
     await update.message.reply_text(
@@ -286,6 +426,7 @@ def main() -> None:
     app.add_handler(CommandHandler("remove", remove_command))
     app.add_handler(CommandHandler("get", get_command))
     app.add_handler(CommandHandler("total", total_command))
+    app.add_handler(CommandHandler("cer", cer_command))
     app.add_handler(MessageHandler(
         filters.TEXT & (filters.ChatType.GROUP | filters.ChatType.SUPERGROUP),
         handle_message
