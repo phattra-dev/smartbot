@@ -292,13 +292,21 @@ def create_certificate(name: str, urls_count: int) -> str:
     c.setLineWidth(2)
     c.rect(45, 45, width - 90, height - 90, fill=False, stroke=True)
     
+    # Add logo at top center
+    logo_path = "logo/logo.png"
+    if os.path.exists(logo_path):
+        try:
+            c.drawImage(logo_path, width / 2 - 40, height - 110, width=80, height=80, preserveAspectRatio=True, mask='auto')
+        except:
+            pass
+    
     # Title
     c.setFillColor(colors.Color(0.2, 0.2, 0.4))
     c.setFont("Helvetica-Bold", 48)
-    c.drawCentredString(width / 2, height - 120, "CERTIFICATE")
+    c.drawCentredString(width / 2, height - 140, "CERTIFICATE")
     
     c.setFont("Helvetica", 24)
-    c.drawCentredString(width / 2, height - 160, "OF ACHIEVEMENT")
+    c.drawCentredString(width / 2, height - 175, "OF ACHIEVEMENT")
     
     # Decorative line
     c.setStrokeColor(colors.Color(0.85, 0.65, 0.13))
