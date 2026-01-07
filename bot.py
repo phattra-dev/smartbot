@@ -358,11 +358,10 @@ def create_certificate(name: str, urls_count: int) -> str:
     c.setFont("Helvetica", 12)
     c.drawCentredString(width / 2, 80, "Authorized Signature")
     
-    # Star decorations
+    # Star decorations - only top right and bottom corners (not top left where logo is)
     c.setFillColor(colors.Color(0.85, 0.65, 0.13))
     c.setFont("Helvetica", 24)
-    c.drawCentredString(100, height - 120, "★")
-    c.drawCentredString(width - 100, height - 120, "★")
+    c.drawCentredString(width - 100, height - 100, "★")
     c.drawCentredString(100, 100, "★")
     c.drawCentredString(width - 100, 100, "★")
     
