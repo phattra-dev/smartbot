@@ -279,44 +279,46 @@ def create_certificate(name: str, urls_count: int) -> str:
     c = canvas.Canvas(filename, pagesize=landscape(A4))
     width, height = landscape(A4)
     
-    # Background color - light cream
-    c.setFillColor(colors.Color(0.98, 0.96, 0.90))
+    # Background color - light cream/white
+    c.setFillColor(colors.Color(0.99, 0.98, 0.95))
     c.rect(0, 0, width, height, fill=True, stroke=False)
     
-    # Border - gold color
+    # Outer border - dark blue
+    c.setStrokeColor(colors.Color(0.1, 0.2, 0.4))
+    c.setLineWidth(12)
+    c.rect(25, 25, width - 50, height - 50, fill=False, stroke=True)
+    
+    # Inner border - gold
     c.setStrokeColor(colors.Color(0.85, 0.65, 0.13))
-    c.setLineWidth(8)
-    c.rect(30, 30, width - 60, height - 60, fill=False, stroke=True)
+    c.setLineWidth(3)
+    c.rect(40, 40, width - 80, height - 80, fill=False, stroke=True)
     
-    # Inner border
-    c.setLineWidth(2)
-    c.rect(45, 45, width - 90, height - 90, fill=False, stroke=True)
-    
-    # Add logo at top center
+    # Add logo at top LEFT corner (professional position)
     logo_path = "logo/logo.png"
     if os.path.exists(logo_path):
         try:
-            c.drawImage(logo_path, width / 2 - 40, height - 110, width=80, height=80, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_path, 60, height - 130, width=70, height=70, preserveAspectRatio=True, mask='auto')
         except:
             pass
     
-    # Title
-    c.setFillColor(colors.Color(0.2, 0.2, 0.4))
-    c.setFont("Helvetica-Bold", 48)
-    c.drawCentredString(width / 2, height - 140, "CERTIFICATE")
+    # Title - centered
+    c.setFillColor(colors.Color(0.1, 0.2, 0.4))
+    c.setFont("Helvetica-Bold", 52)
+    c.drawCentredString(width / 2, height - 100, "CERTIFICATE")
     
-    c.setFont("Helvetica", 24)
-    c.drawCentredString(width / 2, height - 175, "OF ACHIEVEMENT")
+    c.setFillColor(colors.Color(0.85, 0.65, 0.13))
+    c.setFont("Helvetica-Bold", 26)
+    c.drawCentredString(width / 2, height - 140, "OF HARD WORK & DEDICATION")
     
-    # Decorative line
+    # Decorative gold line
     c.setStrokeColor(colors.Color(0.85, 0.65, 0.13))
     c.setLineWidth(2)
-    c.line(width / 2 - 150, height - 180, width / 2 + 150, height - 180)
+    c.line(width / 2 - 200, height - 160, width / 2 + 200, height - 160)
     
     # "This is to certify that"
     c.setFillColor(colors.Color(0.3, 0.3, 0.3))
-    c.setFont("Helvetica", 18)
-    c.drawCentredString(width / 2, height - 230, "This is to certify that")
+    c.setFont("Helvetica-Oblique", 18)
+    c.drawCentredString(width / 2, height - 200, "This is to certify that")
     
     # Name
     c.setFillColor(colors.Color(0.1, 0.1, 0.3))
